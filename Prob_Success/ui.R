@@ -1,33 +1,27 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(riverplot)
+library(ggalluvial)
+library(htmlwidgets)
+library(rhandsontable)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
   
   # Application title
-  titlePanel("Old Faithful Geyser Data"),
+  titlePanel("Sankey demo"),
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-       sliderInput("bins",
-                   "Number of bins:",
-                   min = 1,
-                   max = 50,
-                   value = 30)
+       rHandsontableOutput("hot")
     ),
-    
-    # Show a plot of the generated distribution
     mainPanel(
-       plotOutput("distPlot")
+      tabsetPanel(
+        tabPanel("riverplot", h1("Riverplot package"),
+                 plotOutput("river")
+        ),
+        tabPanel("ggalluvial", h1("ggalluvial package"))
+      )          
     )
   )
 ))
