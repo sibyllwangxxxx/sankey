@@ -13,14 +13,17 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-       rHandsontableOutput("hot")
+       rHandsontableOutput("hot"),
+       br()
     ),
     mainPanel(
       tabsetPanel(
         tabPanel("riverplot", h1("Riverplot package"),
                  plotOutput("river")
         ),
-        tabPanel("ggalluvial", h1("ggalluvial package"))
+        tabPanel("ggalluvial", h1("ggalluvial package"),
+                 #verbatimTextOutput("table"),
+                 plotOutput("ggalluvial"))
       )          
     )
   )
