@@ -13,7 +13,7 @@ ui <- fluidPage(
     br(),
     fluidRow(
       column(width=1),
-      column(width=9, plotOutput("plot")))
+      column(width=7, plotOutput("plot")))
 )
 
 server <- function(input, output, session) {
