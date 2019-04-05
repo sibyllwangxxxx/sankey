@@ -11,20 +11,17 @@ shinyUI(fluidPage(
   titlePanel("Sankey demo"),
   
   # Sidebar with a slider input for number of bins 
-  sidebarLayout(
-    sidebarPanel(
-       rHandsontableOutput("hot"),
-       br()
+   fluidRow( 
+     column(5, rHandsontableOutput("hot1")), 
+     column(6, rHandsontableOutput("hot"))
+   ),
+  tabsetPanel(
+    tabPanel("riverplot", h1("Riverplot package"),
+             plotOutput("river", width = "600px")
     ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel("riverplot", h1("Riverplot package"),
-                 plotOutput("river")
-        ),
-        tabPanel("ggalluvial", h1("ggalluvial package"),
-                 #verbatimTextOutput("table"),
-                 plotOutput("ggalluvial"))
+    tabPanel("ggalluvial", h1("ggalluvial package"),
+             #verbatimTextOutput("table"),
+             plotOutput("ggalluvial", width="800px"))
       )          
     )
   )
-))

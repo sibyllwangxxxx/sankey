@@ -3,7 +3,12 @@ library(ggalluvial)
 library(RColorBrewer)
 
 df <- read.csv("sample_data.csv", stringsAsFactors = F)
+gt <- df[,1:2]
+gt <- gt[!is.na(gt$Portforlio), ]
+gt$X <- c("Effective","Not Effective")
+df <- df[-2]
 df
+gt
 
 nodes <- reshape2::melt(df)
 nodes <- nodes[!is.na(nodes$value), ]
@@ -37,26 +42,31 @@ names(palette) <- unique(nodes$X)
 
 nodes$col <- palette[nodes$X]
 nodes1 <- nodes[, c("ID","x","y", "col")]
-nodes1$y <- nodes$y/2
+nodes1$y <- as.numeric(as.character(factor(nodes1$y, levels = c(8,4,1,2), labels=c(1.25,1,0.25,0))))
 nodes1$srt <- 0
-nodes1$label <- nodes$value
+nodes1$labels <- nodes$value
 nodes1$textpos <- 4
 edges1 <- edges
 edges1$col <- paste0(palette[nodes$X[match(edges1$N1, nodes$ID)]], "60")
 edges1$edgecol <- "col"
 
-rp1 <- makeRiver(nodes1, edges1, node_labels = as.character(nodes$value) )
+rp1 <- makeRiver(nodes1, edges1)
 #class(rp1) <- c(class(rp1), "riverplot")
 #plot(rp1, plot_area = 0.95)
-(coords <- plot(rp1, plot_area = 0.85))
+(coords <- plot(rp1, plot_area = 0.9, mar = c(5,3,1,1), xpd=T))
 text(
   #x = range(coords["x",]),
   x = seq(min(coords["x",]), max(coords["x", ]), length.out = 4),
   y = max(coords["top",]),
   labels = unique(nodes$variable),
-  pos = 1, offset = -1, font = 2
+  pos = 1, offset = -1, font = 2,
+  xpd=TRUE
 )
 
+legend(x = min(coords["lpos",]), y = mean(range(coords["top",])),
+       pch=15, pt.cex = 2, col = unique(nodes1$col), legend = unique(gsub(".+\\s","", nodes1$ID)), bty="n")
+
+plot(rp1, plot_area=0.85, node_margin = 0.5)
 # edgesAll <- as.data.frame(t(expand.grid(split(nodes$ID, nodes$variable))), stringsAsFactors = F)
 # edgesAll2 <- as.data.frame(lapply(edgesAll, function(x) {
 #   if(any(grepl("N$", x[-length(x)]))){
@@ -109,10 +119,20 @@ p1 <- do.call(rbind, lapply(seq_along(p), function(x){
 
 p1$Stratum <- unlist(sapply(strsplit(p1$lode, " "), "[[", 2))
 p1$x <- unlist(sapply(strsplit(p1$lode, " "), "[[", 1))
-p1$x[p1$x=="Portforlio"] <- "aPortfolio"
+#p1$x[p1$x=="Portforlio"] <- "aPortfolio"
+p1$x <- factor(p1$x, levels = c("Portforlio","Phase1b","Phase2","Phase3"))
+p1$Stratum <- factor(p1$Stratum,levels = c("TP","FP","FN","TN"))
 
 ggplot(p1, aes(x=x, stratum=Stratum, y = value, label=Stratum, alluvium = alluvial)) + 
-  geom_flow(aes(fill=Stratum)) + geom_stratum(aes(fill=Stratum)) 
+  geom_flow(aes(fill=Stratum)) + 
+  geom_stratum(aes(fill=Stratum)) +
+  geom_text_repel(aes(label=value), stat = "stratum",box.padding = 0.25, nudge_x = 0.4) +
+  geom_text(data = p1[grepl("Portforlio", p1$lode), ], 
+            aes(label = rep(c("Effective","Not Effective"), each = 4), 
+                hjust="right"), stat = "stratum", nudge_y = -50, nudge_x=0.05) +
+  labs(y = "", x="") + 
+  theme_minimal()
+  #theme(plot.margin=unit(c(4.4,4.4,4.4,16.4), "pt"))
 
 
 

@@ -9,12 +9,15 @@ library(igraph)
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
    output$hot <- renderRHandsontable(rhandsontable(data.frame(X=c("TP","FP","FN","TN"),
-                                                    Portfolio=c(200,800,NA,NA),
+                                                    Portfolio = c(200,800,NA,NA),
                                                     Phase1b = c(180,40,20,760),
                                                     Phase2 = c(162,2,18,38),
                                                     Phase3 = c(145.8,0.05,16.2,1.95), 
                                                     stringsAsFactors = F, row.names = 1:4), useTypes = FALSE))
-  #output$txt <- renderPrint(str(hot_to_r(input$hot)))
+   
+  output$hot1 <- renderRHandsontable(rhandsontable(data.frame(X=c("Effective","Not Effective"),
+                                                                  Portfolio=c(200,800),
+                                                                  stringsAsFactors = F, row.names = 1:2), useTypes = FALSE))
   edges <- reactive({   
     edges <- expand.grid(N1 = 1:nrow(nodes()), N2 = 1:nrow(nodes()))
     edges <- edges[edges$N1 != edges$N2, ]
@@ -82,10 +85,18 @@ shinyServer(function(input, output, session) {
     
     p1$Stratum <- unlist(sapply(strsplit(p1$lode, " "), "[[", 2))
     p1$x <- unlist(sapply(strsplit(p1$lode, " "), "[[", 1))
-    p1$x[p1$x=="Portfolio"] <- "aPortfolio"
+    p1$x <- factor(p1$x, levels = c("Portfolio","Phase1b","Phase2","Phase3"))
+    p1$Stratum <- factor(p1$Stratum,levels = c("TP","FP","FN","TN"))
     
     ggplot(p1, aes(x=x, stratum=Stratum, y = value, label=Stratum, alluvium = alluvial)) + 
-      geom_flow(aes(fill=Stratum)) + geom_stratum(aes(fill=Stratum)) 
+      geom_flow(aes(fill=Stratum)) + 
+      geom_stratum(aes(fill=Stratum)) +
+      geom_text_repel(aes(label=value), stat = "stratum",box.padding = 0.25, nudge_x = 0.25) +
+      # geom_text(data = p1[grepl("Portforlio", p1$lode), ], 
+      #           aes(label = rep(c("Effective","Not Effective"), each = 4), 
+      #               hjust="right"), stat = "stratum", nudge_y = -50, nudge_x=-0.05) +
+      labs(y = "", x="") + 
+      theme_minimal()
     
     
     
