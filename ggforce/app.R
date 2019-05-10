@@ -3,33 +3,72 @@ library(ggforce)
 library(tidyverse)
 library(rhandsontable)
 library(shiny)
+library(shinyjqui)
 
 ui <- fluidPage(
-    titlePanel("Sankey using ggforce"),
-    br(),
-    fluidRow(
-      column(width=1),
-      column(width=9, rHandsontableOutput("hot"))),
-    br(),
-    fluidRow(
-      column(width=1),
-      column(width=7, plotOutput("plot")))
+  titlePanel("Sankey using ggforce"),
+  
+  br(),
+  column(width=3,
+         sliderInput("work", "Prior: out of 100 compounds, how many are assumed to work?", min=0, max=100, value=20)
+  ),
+  column(width=3,
+         sliderInput("ph1TP", "Phase 1: out of all counpounds assumed to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph1FP", "Phase 1: out of all counpounds assumed not to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.05, step=0.01)
+  ),
+  column(width=3,
+         sliderInput("ph2TP", "Phase 2: out of all positive Phase I compounds assumed to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph2FP", "Phase 2: out of all positive Phase I compounds assumed not to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.05, step=0.01)
+  ),
+  column(width=3,
+         sliderInput("ph3TP", "Phase 3: out of all positive Phase II compounds assumed to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph3FP", "Phase 3: out of all positive Phase II compounds assumed not to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.05, step=0.01)
+  ),
+  
+  # br(),
+  # fluidRow(
+  #   column(width=1),
+  #   column(width=9, )),
+  
+  br(),
+  fluidRow(
+    column(width=4,
+           rHandsontableOutput("hot")),
+    column(width=6, 
+           jqui_resizable(plotOutput("plot"))))
 )
 
 server <- function(input, output, session) {
-  output$hot <- renderRHandsontable(rhandsontable(data.frame(X=c("TP","FP","FN","TN"),
-                                                             Portfolio=c(200,800,NA,NA),
-                                                             Phase1b = c(180,40,20,760),
-                                                             Phase2 = c(162,2,18,38),
-                                                             Phase3 = c(145.8,0.05,16.2,1.95), 
-                                                             stringsAsFactors = F, row.names = 1:4), useTypes = FALSE))
+  
+  
+  input_data<-reactive({
+    work<-input$work
+    
+    ph1TP<-input$ph1TP
+    ph1FP<-input$ph1FP
+    
+    ph2TP<-input$ph2TP
+    ph2FP<-input$ph2FP
+    
+    ph3TP<-input$ph3TP
+    ph3FP<-input$ph3FP
+    
+    data.frame(X=c("TP","FP","FN","TN"),
+               Portfolio=c(work,100-work,NA,NA),
+               Phase1b = c(work*ph1TP, (100-work)*ph1FP, work*(1-ph1TP), (100-work)*(1-ph1FP)),
+               Phase2 = c(work*ph1TP*ph2TP, (100-work)*ph1FP*ph2FP, work*ph1TP*(1-ph2TP), (100-work)*ph1FP*(1-ph2FP)),
+               Phase3 = c(work*ph1TP*ph2TP*ph3TP, (100-work)*ph1FP*ph2FP*ph3FP, work*ph1TP*ph2TP*(1-ph3TP), (100-work)*ph1FP*ph2FP*(1-ph3FP)), 
+               stringsAsFactors = F, row.names = 1:4)
+  })
+  
+  output$hot <- renderRHandsontable(rhandsontable(input_data(), useTypes = FALSE))
   #output$tb<-renderTable(hot_to_r(input$hot))
   
   
   p<-reactive({
     sample_data <- hot_to_r(input$hot)
     
-    sample_data[,2:5]<-sample_data[,2:5]/10
+    #sample_data[,2:5]<-sample_data[,2:5]/10
     
     dat<-gather(sample_data, key="phase", value="value", Portfolio, Phase1b, Phase2, Phase3) %>%
       mutate(lab=paste0(rep(LETTERS[1:4], each=4), rep(1:4, 4))) %>%
@@ -136,7 +175,7 @@ server <- function(input, output, session) {
                    120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
                    120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1,
                    rep(125, 4)), 
-               label=c(10*na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3"))
+               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3"))
     
   })
   
