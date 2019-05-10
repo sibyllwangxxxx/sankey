@@ -95,7 +95,21 @@ positions <- data.frame(
         120-D1, 120-D1, 120, 120) #ph3 TP
 )
 
-data<-rbind(wave, positions)
+legnd <- data.frame(
+  group = rep(1:4, 4),
+  col = rep(c("blue", "purple", "blue", "purple"), each=4),
+  alpha = rep(c("1", "1", "2", "2"), each=4),
+  x = c(190, 190, 210, 210, 
+        190, 190, 210, 210,
+        190, 190, 210, 210,
+        190, 190, 210, 210),
+  y = c(40, 35, 40, 35,
+        30, 25, 30, 25,
+        20, 15, 20, 15,
+        10, 5, 10, 5)
+)
+
+data<-rbind(wave, positions, legnd)
 
 
 ggplot(data) +

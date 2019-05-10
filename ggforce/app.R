@@ -9,21 +9,41 @@ ui <- fluidPage(
   titlePanel("Sankey using ggforce"),
   
   br(),
+  # column(width=3,
+  #        sliderInput("work", "Prior: out of 100 compounds, how many are assumed to work?", min=0, max=100, value=20)
+  #        ),
+  # column(width=3,
+  #        sliderInput("ph1TP", "Phase 1: out of all counpounds assumed to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.9, step=0.01),
+  #        sliderInput("ph1FP", "Phase 1: out of all counpounds assumed not to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.05, step=0.01)
+  #        ),
+  # column(width=3,
+  #        sliderInput("ph2TP", "Phase 2: out of all positive Phase I compounds assumed to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.9, step=0.01),
+  #        sliderInput("ph2FP", "Phase 2: out of all positive Phase I compounds assumed not to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.05, step=0.01)
+  # ),
+  # column(width=3,
+  #        sliderInput("ph3TP", "Phase 3: out of all positive Phase II compounds assumed to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.9, step=0.01),
+  #        sliderInput("ph3FP", "Phase 3: out of all positive Phase II compounds assumed not to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.05, step=0.01)
+  # ),
+  
+  
+  
   column(width=3,
-         sliderInput("work", "Prior: out of 100 compounds, how many are assumed to work?", min=0, max=100, value=20)
+         sliderInput("work", "How many out 100 assumed to work?", min=0, max=100, value=20)
   ),
   column(width=3,
-         sliderInput("ph1TP", "Phase 1: out of all counpounds assumed to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.9, step=0.01),
-         sliderInput("ph1FP", "Phase 1: out of all counpounds assumed not to work, what proportion gives positive results in Phase I?", min=0, max=1, value=0.05, step=0.01)
+         sliderInput("ph1TP", "Phase 1: true positive", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph1FP", "Phase 1: false positive", min=0, max=1, value=0.05, step=0.01)
   ),
   column(width=3,
-         sliderInput("ph2TP", "Phase 2: out of all positive Phase I compounds assumed to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.9, step=0.01),
-         sliderInput("ph2FP", "Phase 2: out of all positive Phase I compounds assumed not to work, what proportion gives positive results in Phase II?", min=0, max=1, value=0.05, step=0.01)
+         sliderInput("ph2TP", "Phase 2: true positive", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph2FP", "Phase 2: false positive", min=0, max=1, value=0.05, step=0.01)
   ),
   column(width=3,
-         sliderInput("ph3TP", "Phase 3: out of all positive Phase II compounds assumed to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.9, step=0.01),
-         sliderInput("ph3FP", "Phase 3: out of all positive Phase II compounds assumed not to work, what proportion gives positive results in Phase III?", min=0, max=1, value=0.05, step=0.01)
+         sliderInput("ph3TP", "Phase 3: true positive", min=0, max=1, value=0.9, step=0.01),
+         sliderInput("ph3FP", "Phase 3: false positive", min=0, max=1, value=0.05, step=0.01)
   ),
+  
+  
   
   # br(),
   # fluidRow(
@@ -35,6 +55,7 @@ ui <- fluidPage(
     column(width=4,
            rHandsontableOutput("hot")),
     column(width=6, 
+           br(),
            jqui_resizable(plotOutput("plot"))))
 )
 
@@ -148,14 +169,31 @@ server <- function(input, output, session) {
             120-D1, 120-D1, 120, 120) #ph3 TP
     )
     
-    data<-rbind(wave, positions)
+    
+    legnd <- data.frame(
+      group = rep(101:104, 4),
+      col = rep(c("blue", "purple", "blue", "purple"), each=4),
+      alpha = rep(c("1", "1", "2", "2"), each=4),
+      x = c(190, 190, 210, 210, 
+            190, 190, 210, 210,
+            190, 190, 210, 210,
+            190, 190, 210, 210),
+      y = c(40, 35, 40, 35,
+            30, 25, 30, 25,
+            20, 15, 20, 15,
+            10, 5, 10, 5)
+    )
+    
+    data<-rbind(wave, positions, legnd)
+    
     
     
     ggplot(data) +
       ggforce::geom_diagonal_wide(data=data[1:48,], aes(x, y, group = group, fill = col, alpha=alpha), radius = 0) +
-      ggforce::geom_shape(data=data[49:104,], aes(x, y, group=group, fill=col, alpha=alpha)) +
+      ggforce::geom_shape(data=data[49:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
+      #ggforce::geom_shape(data=data[105:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
       scale_alpha_discrete(range = c(1, 0.2, 0.1)) +
-      scale_fill_manual(values = c("dodgerblue3", "darkorchid3")) +
+      scale_fill_manual(values = c("dodgerblue3", "dodgerblue3", "darkorchid3", "darkorchid3")) +
       theme_bw() +
       theme(axis.line=element_blank(),
             axis.text.x=element_blank(),
@@ -175,7 +213,9 @@ server <- function(input, output, session) {
                    120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
                    120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1,
                    rep(125, 4)), 
-               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3"))
+               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3")) +
+      annotate("segment", x=60, xend=300, y=A2+10, yend=A2+10) +
+      annotate("text", x=c(300, 300), y=c(A2+20, A2), label=c("Positive \nresults", "Negative \nresults")) 
     
   })
   
