@@ -28,7 +28,7 @@ ui <- fluidPage(
   
   
   column(width=3,
-         sliderInput("work", "How many out 100 assumed to work?", min=0, max=100, value=20)
+         sliderInput("work", "How many out of 100 assumed to work?", min=0, max=100, value=20)
   ),
   column(width=3,
          sliderInput("ph1TP", "Phase 1: true positive", min=0, max=1, value=0.9, step=0.01),
@@ -53,7 +53,8 @@ ui <- fluidPage(
   br(),
   fluidRow(
     column(width=4,
-           rHandsontableOutput("hot")),
+           rHandsontableOutput("hot"),
+           uiOutput("barUI")),
     column(width=6, 
            br(),
            jqui_resizable(plotOutput("plot"))))
@@ -75,29 +76,40 @@ server <- function(input, output, session) {
     ph3FP<-input$ph3FP
     
     data.frame(X=c("TP","FP","FN","TN", "Cost"),
-               Portfolio=c(work,100-work,NA,NA,NA),
-               Phase1b = c(work*ph1TP, (100-work)*ph1FP, work*(1-ph1TP), (100-work)*(1-ph1FP),NA),
-               Phase2 = c(work*ph1TP*ph2TP, (100-work)*ph1FP*ph2FP, work*ph1TP*(1-ph2TP), (100-work)*ph1FP*(1-ph2FP),NA),
-               Phase3 = c(work*ph1TP*ph2TP*ph3TP, (100-work)*ph1FP*ph2FP*ph3FP, work*ph1TP*ph2TP*(1-ph3TP), (100-work)*ph1FP*ph2FP*(1-ph3FP),NA), 
+               Portfolio = as.character(c(work,100-work,NA,NA," ")),
+               Phase1b = as.character(c(work*ph1TP, (100-work)*ph1FP, work*(1-ph1TP), (100-work)*(1-ph1FP)," ")),
+               Phase2 = as.character(c(work*ph1TP*ph2TP, (100-work)*ph1FP*ph2FP, work*ph1TP*(1-ph2TP), (100-work)*ph1FP*(1-ph2FP)," ")),
+               Phase3 = as.character(c(work*ph1TP*ph2TP*ph3TP, (100-work)*ph1FP*ph2FP*ph3FP, work*ph1TP*ph2TP*(1-ph3TP), (100-work)*ph1FP*ph2FP*(1-ph3FP)," ")), 
                stringsAsFactors = F, row.names = 1:5)
   })
   
   output$hot <- renderRHandsontable(rhandsontable(input_data(), useTypes = FALSE))
-  #output$tb<-renderTable(hot_to_r(input$hot))
+
   
   
-  p<-reactive({
+  
+  dat<-reactive({
     if(!is.null(input$hot))
-    sample_data <- hot_to_r(input$hot)[-5,]
+    sample_data <- hot_to_r(input$hot)[-5,] %>%
+                   mutate(Portfolio=as.numeric(Portfolio),
+                          Phase1b=as.numeric(Phase1b),
+                          Phase2=as.numeric(Phase2),
+                          Phase3=as.numeric(Phase3))
     
-    #sample_data[,2:5]<-sample_data[,2:5]/10
+    
     if(!is.null(input$hot))
-    dat<-gather(sample_data, key="phase", value="value", Portfolio, Phase1b, Phase2, Phase3) %>%
+    gather(sample_data, key="phase", value="value", Portfolio, Phase1b, Phase2, Phase3) %>%
          mutate(lab=paste0(rep(LETTERS[1:4], each=4), rep(1:4, 4))) %>%
          filter(!is.na(value))
     
-    for(i in seq_along(dat$lab)){
-      assign(dat$lab[i], dat$value[i])
+  })
+
+  output$barUI<-renderUI(numericInput("bar", "Horizonal bar position", min=60, max=110, value=dat()$value[2]+10))
+  
+  
+  p<-reactive({
+    for(i in seq_along(dat()$lab)){
+      assign(dat()$lab[i], dat()$value[i])
     }
     
     wave <- data.frame(
@@ -203,20 +215,25 @@ server <- function(input, output, session) {
             axis.ticks=element_blank(),
             axis.title.x=element_blank(),
             axis.title.y=element_blank(),
+            #plot.title = element_text(size=14, face="bold"),
             legend.position="none",
             panel.background=element_blank(),
             panel.border=element_blank(),
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             plot.background=element_blank()) +
-      annotate("text", x=c(25, 25, 105, 105, 105, 105, 185, 185, 185, 185, 265, 265, 265, 265, 
-                           10, 90, 170, 250, 10, 90, 170, 250), 
+      annotate("text", x=c(10, 90, 170, 250, 10, 90, 170, 250), 
+               y=c(rep(130, 4), rep(125, 4)), 
+               label=c("Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
+      
+      annotate("text", x=c(25, 25, 105, 105, 105, 105, 185, 185, 185, 185, 265, 265, 265, 265), 
                y=c(120-A1/2, A2/2, 120-B1/2, 120-B1-B2/2, B4+B3/2, B4/2, 
                    120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
-                   120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1,
-                   rep(130, 4), rep(125, 4)), 
-               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
-      annotate("segment", x=60, xend=300, y=A2+10, yend=A2+10) +
+                   120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1), 
+               label=paste0(c(na.omit(unlist(sample_data[, 2:5]))), "%")) +
+      
+      annotate("segment", x=60, xend=300, y=input$bar, yend=input$bar) +
+      
       annotate("text", x=c(300, 300), y=c(A2+20, A2), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
     
   })
@@ -228,19 +245,6 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 
-
-
-# sample_data<-data.frame(X=c("TP", "FP", "FN", "TN"),
-#                         Portforlio=c(200, 800, NA, NA),
-#                         Phase1b=c(180, 40, 20, 760),
-#                         Phase2=c(162, 2, 18, 38),
-#                         Phase3=c(145.8, 0.05, 16.2, 1.95))
-# 
-# sample_data<-data.frame(X=c("TP", "FP", "FN", "TN"),
-#                         Portforlio=c(200, 800, NA, NA),
-#                         Phase1b=c(160, 100, 40, 700),
-#                         Phase2=c(120, 50, 40, 50),
-#                         Phase3=c(100, 35, 20, 15))
 
 
 
