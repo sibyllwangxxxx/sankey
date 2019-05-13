@@ -74,12 +74,12 @@ server <- function(input, output, session) {
     ph3TP<-input$ph3TP
     ph3FP<-input$ph3FP
     
-    data.frame(X=c("TP","FP","FN","TN"),
-               Portfolio=c(work,100-work,NA,NA),
-               Phase1b = c(work*ph1TP, (100-work)*ph1FP, work*(1-ph1TP), (100-work)*(1-ph1FP)),
-               Phase2 = c(work*ph1TP*ph2TP, (100-work)*ph1FP*ph2FP, work*ph1TP*(1-ph2TP), (100-work)*ph1FP*(1-ph2FP)),
-               Phase3 = c(work*ph1TP*ph2TP*ph3TP, (100-work)*ph1FP*ph2FP*ph3FP, work*ph1TP*ph2TP*(1-ph3TP), (100-work)*ph1FP*ph2FP*(1-ph3FP)), 
-               stringsAsFactors = F, row.names = 1:4)
+    data.frame(X=c("TP","FP","FN","TN", "Cost"),
+               Portfolio=c(work,100-work,NA,NA,NA),
+               Phase1b = c(work*ph1TP, (100-work)*ph1FP, work*(1-ph1TP), (100-work)*(1-ph1FP),NA),
+               Phase2 = c(work*ph1TP*ph2TP, (100-work)*ph1FP*ph2FP, work*ph1TP*(1-ph2TP), (100-work)*ph1FP*(1-ph2FP),NA),
+               Phase3 = c(work*ph1TP*ph2TP*ph3TP, (100-work)*ph1FP*ph2FP*ph3FP, work*ph1TP*ph2TP*(1-ph3TP), (100-work)*ph1FP*ph2FP*(1-ph3FP),NA), 
+               stringsAsFactors = F, row.names = 1:5)
   })
   
   output$hot <- renderRHandsontable(rhandsontable(input_data(), useTypes = FALSE))
@@ -87,13 +87,14 @@ server <- function(input, output, session) {
   
   
   p<-reactive({
-    sample_data <- hot_to_r(input$hot)
+    if(!is.null(input$hot))
+    sample_data <- hot_to_r(input$hot)[-5,]
     
     #sample_data[,2:5]<-sample_data[,2:5]/10
-    
+    if(!is.null(input$hot))
     dat<-gather(sample_data, key="phase", value="value", Portfolio, Phase1b, Phase2, Phase3) %>%
-      mutate(lab=paste0(rep(LETTERS[1:4], each=4), rep(1:4, 4))) %>%
-      filter(!is.na(value))
+         mutate(lab=paste0(rep(LETTERS[1:4], each=4), rep(1:4, 4))) %>%
+         filter(!is.na(value))
     
     for(i in seq_along(dat$lab)){
       assign(dat$lab[i], dat$value[i])
@@ -187,6 +188,7 @@ server <- function(input, output, session) {
     data<-rbind(wave, positions, legnd)
     
     
+    if(!is.null(input$hot))
     
     ggplot(data) +
       ggforce::geom_diagonal_wide(data=data[1:48,], aes(x, y, group = group, fill = col, alpha=alpha), radius = 0) +
@@ -208,14 +210,14 @@ server <- function(input, output, session) {
             panel.grid.minor=element_blank(),
             plot.background=element_blank()) +
       annotate("text", x=c(25, 25, 105, 105, 105, 105, 185, 185, 185, 185, 265, 265, 265, 265, 
-                           15, 95, 175, 255), 
+                           10, 90, 170, 250, 10, 90, 170, 250), 
                y=c(120-A1/2, A2/2, 120-B1/2, 120-B1-B2/2, B4+B3/2, B4/2, 
                    120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
                    120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1,
-                   rep(125, 4)), 
-               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3")) +
+                   rep(130, 4), rep(125, 4)), 
+               label=c(na.omit(unlist(sample_data[, 2:5])), "Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
       annotate("segment", x=60, xend=300, y=A2+10, yend=A2+10) +
-      annotate("text", x=c(300, 300), y=c(A2+20, A2), label=c("Positive \nresults", "Negative \nresults")) 
+      annotate("text", x=c(300, 300), y=c(A2+20, A2), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
     
   })
   
