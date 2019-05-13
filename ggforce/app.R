@@ -46,16 +46,13 @@ ui <- fluidPage(
   ),
   
   
-  
-  # br(),
-  # fluidRow(
-  #   column(width=1),
-  #   column(width=9, )),
-  
   br(),
   fluidRow(
     column(width=4,
+           br(),
+           strong("Probability of success table"),
            rHandsontableOutput("hot"),
+           br(),
            uiOutput("barUI")),
     column(width=6, 
            br(),
@@ -106,7 +103,7 @@ server <- function(input, output, session) {
     
   })
 
-  output$barUI<-renderUI(numericInput("bar", "Horizonal bar position", min=60, max=110, value=dat()$value[2]+10))
+  output$barUI<-renderUI(numericInput("bar", "Horizonal bar position", min=20, max=120, value=dat()$value[2]+10))
   
   
   p<-reactive({
@@ -228,15 +225,15 @@ server <- function(input, output, session) {
                y=c(rep(130, 4), rep(125, 4)), 
                label=c("Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
       
-      annotate("text", x=c(25, 25, 105, 105, 105, 105, 185, 185, 185, 185, 265, 265, 265, 265), 
+      annotate("text", x=c(30, 30, 110, 110, 110, 110, 195, 195, 195, 195, 275, 275, 275, 275), 
                y=c(120-A1/2, A2/2, 120-B1/2, 120-B1-B2/2, B4+B3/2, B4/2, 
-                   120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
-                   120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1), 
+                   120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2+1, 120-(C1+C2+20+C3)-C4/2-1,
+                   120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+2, 120-(D1+D2+20+D3)-D4/2-2), 
                label=paste0(c(na.omit(unlist(hot_to_r(input$hot)[-5,2:5]))), "%")) +
       
       annotate("segment", x=60, xend=300, y=input$bar, yend=input$bar) +
       
-      annotate("text", x=c(300, 300), y=c(input$bar+10, input$bar-10), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
+      annotate("text", x=c(310, 310), y=c(input$bar+10, input$bar-10), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
     
   })
   
