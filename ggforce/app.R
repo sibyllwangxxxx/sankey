@@ -1,3 +1,5 @@
+#install.packages(c("reshape2", "ggforce", "tidyverse", "rhandsontable", "shiny", "shinyjqui"))
+
 library(reshape2)
 library(ggforce)
 library(tidyverse)
@@ -230,11 +232,11 @@ server <- function(input, output, session) {
                y=c(120-A1/2, A2/2, 120-B1/2, 120-B1-B2/2, B4+B3/2, B4/2, 
                    120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2, 120-(C1+C2+20+C3)-C4/2,
                    120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+1, 120-(D1+D2+20+D3)-D4/2-1), 
-               label=paste0(c(na.omit(unlist(sample_data[, 2:5]))), "%")) +
+               label=paste0(c(na.omit(unlist(hot_to_r(input$hot)[-5,2:5]))), "%")) +
       
       annotate("segment", x=60, xend=300, y=input$bar, yend=input$bar) +
       
-      annotate("text", x=c(300, 300), y=c(A2+20, A2), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
+      annotate("text", x=c(300, 300), y=c(input$bar+10, input$bar-10), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
     
   })
   
