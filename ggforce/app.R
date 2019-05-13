@@ -6,6 +6,7 @@ library(tidyverse)
 library(rhandsontable)
 library(shiny)
 library(shinyjqui)
+library(colourpicker)
 
 ui <- fluidPage(
   titlePanel("Sankey using ggforce"),
@@ -53,7 +54,10 @@ ui <- fluidPage(
            strong("Probability of success table"),
            rHandsontableOutput("hot"),
            br(),
-           uiOutput("barUI")),
+           uiOutput("barUI"),
+           br(),
+           colourInput("col1", "Work", "dodgerblue3"),
+           colourInput("col2", "Not work", "darkorchid3")),
     column(width=6, 
            br(),
            jqui_resizable(plotOutput("plot"))))
@@ -206,7 +210,7 @@ server <- function(input, output, session) {
       ggforce::geom_shape(data=data[49:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
       #ggforce::geom_shape(data=data[105:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
       scale_alpha_discrete(range = c(1, 0.2, 0.1)) +
-      scale_fill_manual(values = c("dodgerblue3", "dodgerblue3", "darkorchid3", "darkorchid3")) +
+      scale_fill_manual(values = c(input$col1, input$col1, input$col2, input$col2)) +
       theme_bw() +
       theme(axis.line=element_blank(),
             axis.text.x=element_blank(),
