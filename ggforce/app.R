@@ -9,7 +9,12 @@ library(shinyjqui)
 library(colourpicker)
 
 ui <- fluidPage(
-  titlePanel("Sankey using ggforce"),
+  titlePanel("Probability of Success Demonstration"),
+  
+  tags$style(type="text/css",
+             ".shiny-output-error { visibility: hidden; }",
+             ".shiny-output-error:before { visibility: hidden; }"
+  ),
   
   br(),
   # column(width=3,
@@ -48,16 +53,18 @@ ui <- fluidPage(
   
   
   br(),
+  hr(),
   fluidRow(
     column(width=4,
            br(),
-           strong("Probability of success table"),
-           rHandsontableOutput("hot"),
+           column(width=12, 
+                  strong("Probability of success table"),
+                  rHandsontableOutput("hot")),
+           column(width=6, br(), uiOutput("barUI")),
+           column(width=6, br(), sliderInput("space", "White space", min=10, max=40, value=20)),
            br(),
-           uiOutput("barUI"),
-           br(),
-           colourInput("col1", "Work", "dodgerblue3"),
-           colourInput("col2", "Not work", "darkorchid3")),
+           column(width=6, colourInput("col1", "Work", "dodgerblue3")),
+           column(width=6, colourInput("col2", "Not work", "darkorchid3"))),
     column(width=6, 
            br(),
            jqui_resizable(plotOutput("plot"))))
@@ -107,13 +114,18 @@ server <- function(input, output, session) {
     
   })
 
-  output$barUI<-renderUI(numericInput("bar", "Horizonal bar position", min=20, max=120, value=dat()$value[2]+10))
+  output$barUI<-renderUI(numericInput("bar", "Horizonal bar position", min=20, max=120, value=dat()$value[2]+input$space*0.5))
   
+ 
   
-  p<-reactive({
+  data<-reactive({
+    
     for(i in seq_along(dat()$lab)){
       assign(dat()$lab[i], dat()$value[i])
     }
+    
+    S<-input$space
+    H<-100+input$space
     
     wave <- data.frame(
       x = c(20, 80, 20, 80, 
@@ -129,19 +141,19 @@ server <- function(input, output, session) {
             180, 240, 180, 240,
             180, 240, 180, 240),
       y = c(0, 0, B4, B4, 
-            B4, 120-(B1+B2), A2, 120-B1,
-            120-A1, B4, 120-B1, B3+B4, 
-            120-B1, 120-B1, 120, 120,
+            B4, H-(B1+B2), A2, H-B1,
+            H-A1, B4, H-B1, B3+B4, 
+            H-B1, H-B1, H, H,
             
-            120-(B1+B2), 120-(C1+C2)-20-(C3+C4), 120-(B1+B2)+C4, 120-(C1+C2)-20-C3,
-            120-(B1+B2)+C4, 120-(C1+C2), 120-B1, 120-C1,
-            120-B1, 120-(C1+C2)-20-C3, 120-C1, 120-(C1+C2)-20,
-            120-C1, 120-C1, 120, 120,
+            H-(B1+B2), H-(C1+C2)-S-(C3+C4), H-(B1+B2)+C4, H-(C1+C2)-S-C3,
+            H-(B1+B2)+C4, H-(C1+C2), H-B1, H-C1,
+            H-B1, H-(C1+C2)-S-C3, H-C1, H-(C1+C2)-S,
+            H-C1, H-C1, H, H,
             
-            120-(C1+C2), 120-(D1+D2)-20-(D3+D4), 120-(C1+C2)+D4, 120-(D1+D2)-20-D3,
-            120-(C1+C2)+D4, 120-(D1+D2), 120-C1, 120-D1,
-            120-C1, 120-(D1+D2)-20-D3, 120-D1, 120-(D1+D2)-20,
-            120-D1, 120-D1, 120, 120 
+            H-(C1+C2), H-(D1+D2)-S-(D3+D4), H-(C1+C2)+D4, H-(D1+D2)-S-D3,
+            H-(C1+C2)+D4, H-(D1+D2), H-C1, H-D1,
+            H-C1, H-(D1+D2)-S-D3, H-D1, H-(D1+D2)-S,
+            H-D1, H-D1, H, H 
       ),
       group = rep(1:12, each=4),
       col = rep(rep(c("Purple", "Purple", "Blue", "Blue"), 3), each=4),
@@ -167,50 +179,63 @@ server <- function(input, output, session) {
             240, 260, 260, 240, #ph3 FP
             240, 260, 260, 240), #ph3 TP
       y = c(0, 0, A2, A2, #portfolio FP
-            120-A1, 120-A1, 120, 120, #portfolio TP
+            H-A1, H-A1, H, H, #portfolio TP
             
             0, 0, B4, B4, #ph1b TN
             B4, B4, B3+B4, B3+B4, #ph1b FN
-            120-(B1+B2), 120-(B1+B2), 120-B1, 120-B1, #ph1b FP 
-            120-B1, 120-B1, 120, 120, #ph1b TP
+            H-(B1+B2), H-(B1+B2), H-B1, H-B1, #ph1b FP 
+            H-B1, H-B1, H, H, #ph1b TP
             
-            120-(C1+C2)-20-(C3+C4), 120-(C1+C2)-20-(C3+C4), 120-(C1+C2)-20-C3, 120-(C1+C2)-20-C3, #ph2 TN
-            120-(C1+C2)-20-C3, 120-(C1+C2)-20-C3, 120-(C1+C2)-20, 120-(C1+C2)-20, #ph2 FN
-            120-(C1+C2), 120-(C1+C2), 120-C1, 120-C1, #ph2 FP
-            120-C1, 120-C1, 120, 120, #ph2 TP
+            H-(C1+C2)-S-(C3+C4), H-(C1+C2)-S-(C3+C4), H-(C1+C2)-S-C3, H-(C1+C2)-S-C3, #ph2 TN
+            H-(C1+C2)-S-C3, H-(C1+C2)-S-C3, H-(C1+C2)-S, H-(C1+C2)-S, #ph2 FN
+            H-(C1+C2), H-(C1+C2), H-C1, H-C1, #ph2 FP
+            H-C1, H-C1, H, H, #ph2 TP
             
-            120-(D1+D2)-20-(D3+D4), 120-(D1+D2)-20-(D3+D4), 120-(D1+D2)-20-D3, 120-(D1+D2)-20-D3, #ph3 TN
-            120-(D1+D2)-20-D3, 120-(D1+D2)-20-D3, 120-(D1+D2)-20, 120-(D1+D2)-20, #ph3 FN
-            120-(D1+D2), 120-(D1+D2), 120-D1, 120-D1, #ph3 FP
-            120-D1, 120-D1, 120, 120) #ph3 TP
+            H-(D1+D2)-S-(D3+D4), H-(D1+D2)-S-(D3+D4), H-(D1+D2)-S-D3, H-(D1+D2)-S-D3, #ph3 TN
+            H-(D1+D2)-S-D3, H-(D1+D2)-S-D3, H-(D1+D2)-S, H-(D1+D2)-S, #ph3 FN
+            H-(D1+D2), H-(D1+D2), H-D1, H-D1, #ph3 FP
+            H-D1, H-D1, H, H) #ph3 TP
     )
     
     
     legnd <- data.frame(
-      group = rep(101:104, 4),
-      col = rep(c("blue", "purple", "blue", "purple"), each=4),
+      group = rep(15:18, each=4),
+      col = rep(c("Blue", "Purple", "Blue", "Purple"), each=4),
       alpha = rep(c("1", "1", "2", "2"), each=4),
-      x = c(190, 190, 210, 210, 
-            190, 190, 210, 210,
-            190, 190, 210, 210,
-            190, 190, 210, 210),
-      y = c(40, 35, 40, 35,
-            30, 25, 30, 25,
-            20, 15, 20, 15,
-            10, 5, 10, 5)
+      x = c(200, 200, 220, 220, 
+            200, 200, 220, 220,
+            200, 200, 220, 220,
+            200, 200, 220, 220),
+      y = c(29, 24, 24, 29,
+            21, 16, 16, 21,
+            13, 8, 8, 13,
+            5, 0, 0, 5)
     )
     
-    data<-rbind(wave, positions, legnd)
+  rbind(wave, positions, legnd)
     
+  })
+    
+  
+    
+    
+  p<-reactive({
+      
+    S<-input$space
+    H<-100+input$space
+    
+    for(i in seq_along(dat()$lab)){
+        assign(dat()$lab[i], dat()$value[i])
+    }
     
     if(!is.null(input$hot))
     
-    ggplot(data) +
-      ggforce::geom_diagonal_wide(data=data[1:48,], aes(x, y, group = group, fill = col, alpha=alpha), radius = 0) +
-      ggforce::geom_shape(data=data[49:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
+    ggplot(data()) +
+      ggforce::geom_diagonal_wide(data=data()[1:48,], aes(x, y, group = group, fill = col, alpha=alpha), radius = 0) +
+      ggforce::geom_shape(data=data()[49:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
       #ggforce::geom_shape(data=data[105:120,], aes(x, y, group=group, fill=col, alpha=alpha)) +
-      scale_alpha_discrete(range = c(1, 0.2, 0.1)) +
-      scale_fill_manual(values = c(input$col1, input$col1, input$col2, input$col2)) +
+      scale_alpha_discrete(range = c(1, 0.1, 0.2)) +
+      scale_fill_manual(values = c(input$col1, input$col2)) +
       theme_bw() +
       theme(axis.line=element_blank(),
             axis.text.x=element_blank(),
@@ -226,18 +251,20 @@ server <- function(input, output, session) {
             panel.grid.minor=element_blank(),
             plot.background=element_blank()) +
       annotate("text", x=c(10, 90, 170, 250, 10, 90, 170, 250), 
-               y=c(rep(130, 4), rep(125, 4)), 
-               label=c("Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
+                       y=c(rep(H+10, 4), rep(H+5, 4)), 
+                       label=c("Portfolio", "Ph1b", "Ph2", "Ph3", hot_to_r(input$hot)[5,-1]), fontface=2) +
       
       annotate("text", x=c(30, 30, 110, 110, 110, 110, 195, 195, 195, 195, 275, 275, 275, 275), 
-               y=c(120-A1/2, A2/2, 120-B1/2, 120-B1-B2/2, B4+B3/2, B4/2, 
-                   120-C1/2, 120-C1-C2/2, 120-(C1+C2+20)-C3/2+1, 120-(C1+C2+20+C3)-C4/2-1,
-                   120-D1/2, 120-D1-D2/2, 120-(D1+D2+20)-D3/2+2, 120-(D1+D2+20+D3)-D4/2-2), 
-               label=paste0(c(na.omit(unlist(hot_to_r(input$hot)[-5,2:5]))), "%")) +
+                       y=c(H-A1/2, A2/2, H-B1/2, H-B1-B2/2, B4+B3/2, B4/2, 
+                           H-C1/2, H-C1-C2/2, H-(C1+C2+S)-C3/2+1, H-(C1+C2+S+C3)-C4/2-1,
+                           H-D1/2, H-D1-D2/2, H-(D1+D2+S)-D3/2+2, H-(D1+D2+S+D3)-D4/2-2), 
+                           label=paste0(c(na.omit(unlist(hot_to_r(input$hot)[-5,2:5]))), "%")) +
       
       annotate("segment", x=60, xend=300, y=input$bar, yend=input$bar) +
       
-      annotate("text", x=c(310, 310), y=c(input$bar+10, input$bar-10), label=c("Positive \nresults", "Negative \nresults"), fontface=2) 
+      annotate("text", x=c(310, 310), y=c(input$bar+10, input$bar-10), label=c("Positive \nresults", "Negative \nresults"), fontface=2) +
+      
+      annotate("text", x=c(244, 245, 244, 243), y=seq(2.5, 26.5, 8), label=c("True negative", "False negative", "False positive", "True positive"), fontface=2) 
     
   })
   
