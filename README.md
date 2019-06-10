@@ -1,5 +1,5 @@
-![](screenresords/screen2.gif)
+![](screenrecords/screen2.gif)
 
-![](screenresords/screen3.gif)
+![](screenrecords/screen3.gif)
 
-![](screenresords/screen4.gif)
+![](screenrecords/screen4.gif)
